@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2fahome – Free 2FA Code Generator</title>
+<meta name="description" content="Paste your 2FA secret key and get your 6-digit login code instantly. Your key never leaves your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+  :root{
+    --fog:#E9EDF3; --card:#FFFFFF; --ink:#17213A; --soft:#5B6882;
+    --mist:#CDD6E6; --cobalt:#2B4ACB; --cobalt-dark:#1F37A0; --alert:#B42343; --ok:#1E7F52; --tg:#229ED9;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Manrope,system-ui,sans-serif;background:var(--fog);color:var(--ink);line-height:1.5}
+  a{color:var(--cobalt)}
+  .page{max-width:560px;margin:0 auto;padding:0 14px}
+  button{font:inherit;font-weight:700;border:none;border-radius:12px;cursor:pointer}
+  button:focus-visible,textarea:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
+
+  /* Header + advertise bar */
+  header{padding:12px 0 10px}
+  .logo{font-weight:800;font-size:1.1rem;text-decoration:none;color:var(--ink);letter-spacing:-.02em;display:inline-flex;align-items:center;gap:7px}
+  .logo::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--cobalt)}
+  .promo{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#DDE8FA;border:1px solid #C3D4F2;border-radius:12px;padding:8px 8px 8px 12px;margin-bottom:10px}
+  .promo p{font-size:.85rem;line-height:1.3}
+  .promo strong{display:block}
+  .promo span{color:var(--soft);font-size:.78rem}
+  .tg{flex-shrink:0;background:var(--tg);color:#fff;text-decoration:none;font-weight:700;font-size:.85rem;padding:9px 14px;border-radius:10px}
+  .tg:hover{background:#1A86BA}
+
+  /* Tool */
+  .tool{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--mist)}
+  h1{font-size:1.2rem;font-weight:800;letter-spacing:-.01em;margin-bottom:10px}
+  textarea{width:100%;height:58px;resize:vertical;font:inherit;font-size:1rem;padding:10px 12px;border:1.5px solid var(--mist);border-radius:12px;background:#F7F9FC;color:var(--ink);word-break:break-all}
+  textarea:focus{outline:none;border-color:var(--cobalt);background:#fff}
+  .row{display:grid;grid-template-columns:auto 1fr;gap:8px;margin-top:8px}
+  .row button{padding:12px 16px;font-size:.95rem}
+  .primary{background:var(--cobalt);color:#fff}
+  .primary:hover{background:var(--cobalt-dark)}
+  .ghost{background:#EEF2F8;color:var(--ink)}
+  .ghost:hover{background:var(--mist)}
+  .error{color:var(--alert);font-weight:600;font-size:.88rem;margin-top:8px}
+  .note{color:var(--soft);font-size:.82rem;margin-top:8px}
+  .error:empty,.note:empty{display:none}
+
+  /* Code pop-up */
+  .result{margin-top:10px;background:#F2F5FB;border:1.5px solid var(--cobalt);border-radius:14px;padding:12px 12px 10px 16px}
+  .result[hidden]{display:none}
+  .result.pop{animation:pop .28s cubic-bezier(.2,.9,.3,1.2)}
+  @keyframes pop{from{opacity:0;transform:translateY(-6px) scale(.96)}to{opacity:1;transform:none}}
+  .code-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .code{white-space:nowrap;font-size:clamp(2rem,10vw,2.8rem);font-weight:800;letter-spacing:.06em;font-variant-numeric:tabular-nums;line-height:1.1;cursor:pointer}
+  .code .gap{display:inline-block;width:.25em}
+  .copy{background:var(--ink);color:#fff;padding:12px 16px;font-size:.92rem;flex-shrink:0}
+  .copy.done{background:var(--ok)}
+  .time-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+  .bar{flex:1;height:5px;border-radius:5px;background:var(--mist);overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--cobalt);transition:width .25s linear}
+  .bar.low i{background:var(--alert)}
+  .timer{font-size:.78rem;color:var(--soft);font-variant-numeric:tabular-nums;min-width:2.6em;text-align:right}
+  .clock-note{font-size:.76rem;color:var(--soft);margin-top:6px}
+  .clock-note:empty{display:none}
+
+  .privacy{margin-top:10px;font-size:.78rem;color:var(--soft);display:flex;justify-content:space-between;gap:10px}
+  .clear{background:none;color:var(--soft);font-size:.78rem;text-decoration:underline;padding:0}
+
+  /* Ads — big, one full-width row each */
+  .ads{margin-top:16px}
+  .sponsored{font-size:.82rem;color:var(--soft);margin-bottom:8px;font-weight:600}
+  .ad-grid{display:grid;grid-template-columns:1fr;gap:14px}
+  .ad{position:relative;display:block;background:var(--card);border:1px solid var(--mist);border-radius:18px;overflow:hidden;text-decoration:none;color:var(--ink);box-shadow:0 2px 8px rgba(23,33,58,.06)}
+  .ad:hover{border-color:var(--cobalt)}
+  .ad img{width:100%;height:auto;display:block}   /* banners show in full, never cropped */
+  .ad.banner{background:transparent}
+  .ad .txt{display:flex;flex-direction:column;justify-content:center;padding:22px 20px;min-height:170px}
+  .ad .words{min-width:0}
+  .ad strong{display:block;font-size:1.4rem;font-weight:800;line-height:1.2;letter-spacing:-.01em;padding-right:34px}
+  .ad p{font-size:1.02rem;color:var(--soft);margin-top:8px;line-height:1.45}
+  .ad .go{align-self:flex-start;font-size:1rem;font-weight:700;color:#fff;background:var(--cobalt);padding:12px 22px;border-radius:12px;margin-top:16px}
+  .ad .tag{position:absolute;top:10px;right:10px;background:rgba(23,33,58,.72);color:#fff;font-size:.72rem;font-weight:700;padding:3px 8px;border-radius:6px}
+  .ad.empty{border-style:dashed;border-width:2px;background:transparent;text-align:center;box-shadow:none}
+  .ad.empty .txt{align-items:center;min-height:120px}
+  .ad.empty strong{padding-right:0;font-size:1.15rem}
+  .ad.empty p{margin-top:4px;font-size:.95rem}
+
+  /* Help */
+  .help{margin-top:12px;background:var(--card);border:1px solid var(--mist);border-radius:12px;padding:10px 14px}
+  .help summary{font-weight:700;font-size:.9rem;cursor:pointer}
+  .help dl{margin-top:8px}
+  .help dt{font-weight:700;font-size:.84rem;margin-top:8px}
+  .help dd{color:var(--soft);font-size:.82rem}
+  footer{text-align:center;color:var(--soft);font-size:.75rem;padding:14px 0 18px}
+  @media(prefers-reduced-motion:reduce){.result.pop{animation:none}.bar i{transition:none}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <a class="logo" href="#" id="logo">2fahome</a>
+  </header>
+
+  <main>
+    <section class="promo" id="advertise">
+      <p><strong>Advertise here</strong><span>Reach daily visitors.</span></p>
+      <a class="tg" id="tg" href="#" target="_blank" rel="noopener">Telegram us</a>
+    </section>
+
+    <section class="tool">
+      <h1>Get your 2FA code</h1>
+      <textarea id="secret" aria-label="2FA secret key" placeholder="Paste your 2FA secret key" autocomplete="off" spellcheck="false"></textarea>
+      <div class="row">
+        <button class="ghost" id="paste">Paste</button>
+        <button class="primary" id="go">Get code</button>
+      </div>
+      <p class="error" id="error" role="alert"></p>
+      <p class="note" id="note"></p>
+
+      <div class="result" id="result" hidden aria-live="polite">
+        <div class="code-row">
+          <div class="code" id="code" title="Tap to copy"></div>
+          <button class="copy" id="copy">Copy code</button>
+        </div>
+        <div class="time-row">
+          <div class="bar" id="bar"><i id="fill"></i></div>
+          <span class="timer" id="timer"></span>
+        </div>
+        <p class="clock-note" id="clock-note"></p>
+      </div>
+
+      <p class="privacy"><span>Your key never leaves your device.</span><button class="clear" id="clear">Clear</button></p>
+    </section>
+
+    <section class="ads" id="ads" hidden>
+      <div class="sponsored">Sponsored</div>
+      <div class="ad-grid" id="ad-grid"></div>
+    </section>
+
+    <details class="help" id="help">
+      <summary>Need help?</summary>
+      <dl>
+        <dt>Where do I find my secret key?</dt>
+        <dd>When you turn on two-factor login, the website shows a QR code and a text key, often under "Can't scan the code?". Copy that key and paste it above.</dd>
+        <dt>Why does the code keep changing?</dt>
+        <dd>Each code only works for 30 seconds. Use it before the bar runs out.</dd>
+        <dt>My code isn't working</dt>
+        <dd>Set your phone's time to automatic, and make sure you pasted the full key.</dd>
+        <dt>Is it safe?</dt>
+        <dd>The code is made inside your browser, like Google Authenticator. Keep your key private, like a password.</dd>
+      </dl>
+    </details>
+  </main>
+
+  <footer>© <span id="year"></span> <span id="foot-name">2fahome</span></footer>
+</div>
+
+<script>
+const CFG = window.SITE_CONFIG || {};
+const $ = id => document.getElementById(id);
+
+/* ---------- Site name & Telegram ---------- */
+if (CFG.SITE_NAME) { $("logo").textContent = CFG.SITE_NAME; $("foot-name").textContent = CFG.SITE_NAME; document.title = CFG.SITE_NAME + " – Free 2FA Code Generator"; }
+$("tg").href = "https://t.me/" + String(CFG.TELEGRAM || "").trim().replace(/^@/, "").replace(/^https?:\/\/t\.me\//, "");
+$("year").textContent = new Date().getFullYear();
+
+/* ---------- TOTP (RFC 6238) — runs only in the browser ---------- */
+function base32ToBytes(input) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = 0, value = 0; const out = [];
+  for (const ch of input) {
+    value = (value << 5) | alphabet.indexOf(ch); bits += 5;
+    if (bits >= 8) { out.push((value >>> (bits - 8)) & 255); bits -= 8; value &= (1 << bits) - 1; }
+  }
+  return new Uint8Array(out);
+}
+// Tidies pasted keys: removes spaces, dashes and invisible characters, and swaps look-alike letters
+const LOOKALIKE = {"А":"A","В":"B","С":"C","Е":"E","Н":"H","І":"I","Ј":"J","К":"K","М":"M","О":"O","Р":"P","Ѕ":"S","Т":"T","Х":"X","У":"Y",
+  "а":"A","в":"B","с":"C","е":"E","і":"I","ј":"J","к":"K","м":"M","о":"O","р":"P","ѕ":"S","т":"T","х":"X","у":"Y",
+  "Α":"A","Β":"B","Ε":"E","Ζ":"Z","Η":"H","Ι":"I","Κ":"K","Μ":"M","Ν":"N","Ο":"O","Ρ":"P","Τ":"T","Υ":"Y","Χ":"X"};
+function tidy(part) {
+  let out = "";
+  for (const ch of part.normalize("NFKC")) { const c = LOOKALIKE[ch] || ch; if (/[A-Za-z0-9]/.test(c)) out += c; }
+  return out.toUpperCase();
+}
+function readKey(raw) {
+  let s = raw.normalize("NFKC").trim();
+  const m = s.match(/secret=([^&\s]+)/i);                 // otpauth:// links
+  if (m) { try { s = decodeURIComponent(m[1]); } catch { s = m[1]; } }
+  // Account formats like uid|password|KEY|email — find the part that is the key
+  const pieces = s.split(/[|;,:\n\t]+/).map(p => p.trim()).filter(Boolean);
+  const parts = pieces.map(tidy);
+  if (!parts.some(Boolean)) return { key: "", bad: [], fixedZero: false };
+  let key;
+  if (pieces.length === 1) key = parts[0];
+  else {
+    const candidates = pieces
+      .map((r, i) => ({ r, k: parts[i] }))
+      .filter(c => !/[@.\/]/.test(c.r))                          // skip emails, links, cookies
+      .filter(c => /^[A-Z2-7]{16,}$/.test(c.k.replace(/0/g, "O")));
+    const withDigits = candidates.filter(c => /[2-7]/.test(c.k));  // real keys almost always have a 2–7
+    const pick = withDigits[0] || candidates[0];
+    key = pick ? pick.k : parts.reduce((a, b) => b.length > a.length ? b : a);
+  }
+  let fixedZero = false;
+  if (key.includes("0")) { key = key.replace(/0/g, "O"); fixedZero = true; }   // 2FA keys never use zero
+  const bad = [...new Set(key.match(/[^A-Z2-7]/g) || [])];
+  return { key, bad, fixedZero };
+}
+
+async function totp(keyBytes, time = Date.now()) {
+  const counter = Math.floor(time / 1000 / 30);
+  const buf = new ArrayBuffer(8), view = new DataView(buf);
+  view.setUint32(0, Math.floor(counter / 2 ** 32));
+  view.setUint32(4, counter >>> 0);
+  const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, buf));
+  const off = sig[sig.length - 1] & 15;
+  const bin = ((sig[off] & 127) << 24) | (sig[off + 1] << 16) | (sig[off + 2] << 8) | sig[off + 3];
+  return String(bin % 1e6).padStart(6, "0");
+}
+
+/* ---------- Accurate time ----------
+   Codes depend on the exact time. Phones are often a few seconds off,
+   so we read the real time from our own web server and correct for it. */
+let clockOffset = 0;
+const now = () => Date.now() + clockOffset;
+async function syncClock() {
+  if (!/^https?:$/.test(location.protocol)) return;          // only works once the site is online
+  try {
+    const t0 = Date.now();
+    const r = await fetch(location.pathname + "?time=" + t0, { method: "HEAD", cache: "no-store" });
+    const t1 = Date.now();
+    const d = r.headers.get("date"); if (!d) return;
+    const server = new Date(d).getTime() + 500;               // server time is rounded down to the second
+    const off = server - (t0 + t1) / 2;
+    if (Math.abs(off) > 1500) {                               // only correct clocks that are really off
+      clockOffset = off; lastStep = -1;
+      $("clock-note").textContent = `Your device's clock is ${Math.round(Math.abs(off) / 1000)} seconds ${off > 0 ? "slow" : "fast"}. We've corrected for it, so your codes are accurate.`;
+    }
+  } catch {}
+}
+syncClock();
+
+/* ---------- Code pop-up ---------- */
+let keyBytes = null, currentCode = "", lastStep = -1;
+
+async function refresh() {
+  if (!keyBytes) return;
+  const t = now(), step = Math.floor(t / 30000);
+  const remaining = 30 - Math.floor((t / 1000) % 30);
+  if (step !== lastStep) {
+    lastStep = step;
+    currentCode = await totp(keyBytes, t);
+    $("code").innerHTML = currentCode.slice(0, 3) + '<span class="gap"></span>' + currentCode.slice(3);
+    resetCopy();
+  }
+  $("fill").style.width = (remaining / 30 * 100) + "%";
+  $("bar").classList.toggle("low", remaining <= 5);
+  $("timer").textContent = `${remaining}s`;
+}
+
+async function getCode() {
+  const { key, bad, fixedZero } = readKey($("secret").value);
+  $("error").textContent = ""; $("note").textContent = "";
+  const fail = msg => { $("error").textContent = msg; $("result").hidden = true; keyBytes = null; };
+  if (!key) return fail("Paste your 2FA secret key first.");
+  if (bad.length) {
+    let msg = `Your key has ${bad.map(c => `"${c}"`).join(", ")}, which can't be in a 2FA key. Keys only use letters A–Z and numbers 2–7.`;
+    if (bad.includes("1")) msg += " A 1 is usually the letter I or L.";
+    if (bad.includes("8")) msg += " An 8 is usually the letter B.";
+    return fail(msg);
+  }
+  if (key.length < 16) return fail("That key looks too short. Make sure you copied all of it.");
+  if (fixedZero) $("note").textContent = "We changed 0 (zero) to the letter O, because 2FA keys never use zero.";
+  keyBytes = base32ToBytes(key); lastStep = -1;
+  await refresh();
+  const box = $("result");
+  box.hidden = false;
+  box.classList.remove("pop"); void box.offsetWidth; box.classList.add("pop");
+  box.scrollIntoView({ block: "nearest" });
+}
+
+function resetCopy() { $("copy").textContent = "Copy code"; $("copy").classList.remove("done"); }
+
+const copyCode = async () => {
+  if (!currentCode) return;
+  try { await navigator.clipboard.writeText(currentCode); }            // copies the 6 digits only
+  catch {
+    const t = document.createElement("textarea"); t.value = currentCode;
+    document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove();
+  }
+  $("copy").textContent = "Copied ✓"; $("copy").classList.add("done");
+  setTimeout(resetCopy, 2000);
+};
+$("copy").onclick = copyCode;
+$("code").onclick = copyCode;
+
+$("go").onclick = getCode;
+$("secret").addEventListener("paste", () => setTimeout(getCode, 0));   // pasting shows the code automatically
+$("secret").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); getCode(); } });
+$("paste").onclick = async () => {
+  try { $("secret").value = await navigator.clipboard.readText(); getCode(); }
+  catch { $("error").textContent = "Your browser blocked the Paste button. Press and hold the box, then choose Paste."; }
+};
+$("clear").onclick = () => {
+  keyBytes = null; currentCode = ""; $("secret").value = "";
+  $("result").hidden = true; $("error").textContent = ""; $("note").textContent = ""; $("secret").focus();
+};
+setInterval(refresh, 250);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { lastStep = -1; refresh(); } });
+
+/* ---------- Ads (loaded from your admin page) ---------- */
+const MAX_ADS = 6;
+const dbReady = CFG.SUPABASE_URL && !CFG.SUPABASE_URL.includes("YOUR-PROJECT");
+const dbHeaders = () => {
+  const h = { apikey: CFG.SUPABASE_ANON_KEY };
+  if ((CFG.SUPABASE_ANON_KEY || "").startsWith("eyJ")) h.Authorization = "Bearer " + CFG.SUPABASE_ANON_KEY;
+  return h;
+};
+const safeUrl = u => { try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : "#"; } catch { return "#"; } };
+
+function countClick(id) {
+  if (!dbReady) return;
+  fetch(CFG.SUPABASE_URL + "/rest/v1/rpc/count_click", {
+    method: "POST", keepalive: true,
+    headers: { ...dbHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ ad_id: id })
+  }).catch(() => {});
+}
+
+function renderAds(list) {
+  const grid = $("ad-grid"); grid.innerHTML = "";
+  list.slice(0, MAX_ADS).forEach((ad, i) => {
+    const a = document.createElement("a");
+    a.className = "ad";
+    a.href = safeUrl(ad.link); a.target = "_blank"; a.rel = "noopener sponsored";
+    if (ad.image_url) {
+      const img = document.createElement("img"); img.src = ad.image_url; img.alt = ad.title; img.loading = "lazy";
+      a.classList.add("banner"); a.append(img);
+    } else {
+      const box = document.createElement("div"); box.className = "txt";
+      const words = document.createElement("div"); words.className = "words";
+      const t = document.createElement("strong"); t.textContent = ad.title; words.append(t);
+      if (ad.description) { const p = document.createElement("p"); p.textContent = ad.description; words.append(p); }
+      const go = document.createElement("span"); go.className = "go"; go.textContent = "Visit website";
+      box.append(words, go);
+      a.append(box);
+    }
+    if (!ad.image_url) { const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = "Ad"; a.append(tag); }
+    a.addEventListener("click", () => countClick(ad.id));
+    grid.append(a);
+  });
+  if (list.length < MAX_ADS) {                                   // free space → invite advertisers
+    const e = document.createElement("a");
+    e.className = "ad empty";
+    e.href = "#advertise";
+    e.innerHTML = '<div class="txt"><div class="words"><strong>Your ad could be here</strong><p>Tap to advertise</p></div></div>';
+    grid.append(e);
+  }
+  $("ads").hidden = false;
+}
+
+/* ---------- Visitor count (sends only "new visitor today: yes/no" — never the key) ---------- */
+function countVisit() {
+  if (!dbReady) return;
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos" }).format(new Date());
+  let isNew = true;
+  try { isNew = localStorage.getItem("fh_seen") !== today; localStorage.setItem("fh_seen", today); } catch {}
+  fetch(CFG.SUPABASE_URL + "/rest/v1/rpc/count_visit", {
+    method: "POST", keepalive: true,
+    headers: { ...dbHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ is_new: isNew })
+  }).catch(() => {});
+}
+countVisit();
+
+(async function loadAds() {
+  if (!dbReady) { renderAds([]); return; }
+  try {
+    const r = await fetch(CFG.SUPABASE_URL + "/rest/v1/ads?select=id,title,description,image_url,link,position&order=position.asc,created_at.asc", { headers: dbHeaders() });
+    if (!r.ok) throw new Error(r.status);
+    renderAds(await r.json());
+  } catch { renderAds([]); }
+})();
+</script>
+</body>
+</html>

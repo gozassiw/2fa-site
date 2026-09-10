@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin – Manage ads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--fog:#E9EDF3;--card:#fff;--ink:#17213A;--soft:#5B6882;--mist:#CDD6E6;--cobalt:#2B4ACB;--cobalt-dark:#1F37A0;--alert:#B42343;--ok:#1E7F52;--warn:#8A5A00}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Manrope,system-ui,sans-serif;background:var(--fog);color:var(--ink);line-height:1.5}
+  .page{max-width:680px;margin:0 auto;padding:20px 16px 60px}
+  [hidden]{display:none!important}
+  h1{font-size:1.5rem;font-weight:800;letter-spacing:-.02em}
+  h2{font-size:1.15rem;font-weight:800}
+  .muted{color:var(--soft)}
+  .card{background:var(--card);border:1px solid var(--mist);border-radius:18px;padding:22px}
+  label{display:block;font-weight:600;margin:16px 0 6px}
+  .hint{font-weight:400;color:var(--soft);font-size:.85rem}
+  input[type=text],input[type=email],input[type=password],input[type=url],input[type=date],select,textarea{width:100%;font:inherit;font-size:1rem;padding:12px 14px;border:1.5px solid var(--mist);border-radius:12px;background:#F7F9FC;color:var(--ink)}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--cobalt);background:#fff}
+  textarea{min-height:70px;resize:vertical}
+  .check{display:flex;align-items:center;gap:10px;margin-top:16px;font-weight:600}
+  .check input{width:20px;height:20px}
+  button,.btn{font:inherit;font-weight:700;border:none;border-radius:12px;padding:12px 18px;cursor:pointer;font-size:.95rem;text-decoration:none;display:inline-block;text-align:center}
+  .primary{background:var(--cobalt);color:#fff}.primary:hover{background:var(--cobalt-dark)}
+  .primary:disabled{background:var(--mist);color:var(--soft);cursor:not-allowed}
+  .ghost{background:#EEF2F8;color:var(--ink)}.ghost:hover{background:var(--mist)}
+  .danger{background:#FBEAEE;color:var(--alert)}
+  button:focus-visible,.btn:focus-visible,input:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
+  .msg{margin-top:12px;font-weight:600}
+  .msg.err{color:var(--alert)}.msg.ok{color:var(--ok)}
+  .msg:empty{display:none}
+
+  .top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+  .top .links{display:flex;gap:8px}
+  .summary{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .slots{display:flex;gap:5px;margin-top:6px}
+  .slots i{width:22px;height:8px;border-radius:4px;background:var(--mist)}
+  .slots i.on{background:var(--cobalt)}
+
+  .ad-item{display:grid;grid-template-columns:96px 1fr;gap:14px;background:var(--card);border:1px solid var(--mist);border-radius:16px;padding:14px;margin-bottom:10px}
+  .thumb{width:96px;height:64px;border-radius:10px;background:#EEF2F8;object-fit:contain;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--soft);text-align:center;padding:4px}
+  .ad-item h3{font-size:1rem;line-height:1.3}
+  .ad-item .meta{font-size:.85rem;color:var(--soft);margin-top:2px}
+  .ad-item .link{word-break:break-all}
+  .pill{display:inline-block;font-size:.75rem;font-weight:700;padding:2px 9px;border-radius:999px;margin-right:6px}
+  .live{background:#E3F4EC;color:var(--ok)}.paused{background:#EEF2F8;color:var(--soft)}.expired{background:#FDF1DC;color:var(--warn)}
+  .actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .actions button{padding:8px 12px;font-size:.85rem}
+  .empty{text-align:center;padding:36px 20px;border:1.5px dashed var(--mist);border-radius:16px;color:var(--soft)}
+
+  .preview{margin-top:10px;display:flex;align-items:center;gap:12px}
+  .preview img{width:220px;height:auto;border-radius:10px;border:1px solid var(--mist)}
+  .form-actions{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:22px}
+  .stats{background:var(--card);border:1px solid var(--mist);border-radius:18px;padding:18px;margin-bottom:22px}
+  .stats-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .stats-head button{padding:7px 12px;font-size:.82rem}
+  .tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  @media(min-width:560px){.tiles{grid-template-columns:repeat(4,1fr)}}
+  .tile{background:#F2F5FB;border-radius:12px;padding:12px}
+  .tile b{display:block;font-size:1.5rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+  .tile span{font-size:.8rem;color:var(--soft)}
+  .tile small{display:block;font-size:.74rem;color:var(--soft);margin-top:2px}
+  .chart{display:flex;align-items:flex-end;gap:4px;height:90px;margin-top:16px;padding-top:6px}
+  .chart div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+  .chart i{display:block;width:100%;background:var(--cobalt);border-radius:4px 4px 0 0;min-height:2px}
+  .chart div.today i{background:var(--ok)}
+  .chart em{font-style:normal;font-size:.62rem;color:var(--soft)}
+  .stats-foot{font-size:.78rem;color:var(--soft);margin-top:10px}
+  .login{max-width:400px;margin:8vh auto 0}
+  .login button{width:100%;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ========== LOGIN ========== -->
+  <section id="login-view" class="login card" hidden>
+    <h1>Admin login</h1>
+    <p class="muted">Sign in to manage your ads.</p>
+    <label for="email">Email</label>
+    <input type="email" id="email" autocomplete="username">
+    <label for="password">Password</label>
+    <input type="password" id="password" autocomplete="current-password">
+    <button class="primary" id="login-btn">Log in</button>
+    <p class="msg err" id="login-msg"></p>
+  </section>
+
+  <!-- ========== DASHBOARD ========== -->
+  <section id="dash-view" hidden>
+    <div class="top">
+      <h1>Dashboard</h1>
+      <div class="links">
+        <a class="btn ghost" href="/" target="_blank">View site</a>
+        <button class="ghost" id="logout">Log out</button>
+      </div>
+    </div>
+
+    <section class="stats">
+      <div class="stats-head">
+        <h2>Visitors</h2>
+        <button class="ghost" id="stats-refresh">Refresh</button>
+      </div>
+      <div class="tiles">
+        <div class="tile"><span>Today</span><b id="s-today">–</b><small id="s-today-v"></small></div>
+        <div class="tile"><span>Last 7 days</span><b id="s-7">–</b><small id="s-7-v"></small></div>
+        <div class="tile"><span>Last 30 days</span><b id="s-30">–</b><small id="s-30-v"></small></div>
+        <div class="tile"><span>All time</span><b id="s-all">–</b><small id="s-all-v"></small></div>
+      </div>
+      <div class="chart" id="chart" aria-label="Visitors over the last 14 days"></div>
+      <p class="stats-foot">Big numbers are visitors (people). Small numbers are page views. Days use Nigeria time.</p>
+    </section>
+
+    <div class="summary">
+      <div>
+        <strong id="count-text">0 of 6 ad spaces used</strong>
+        <div class="slots" id="slots"></div>
+      </div>
+      <button class="primary" id="add-btn">+ Add new ad</button>
+    </div>
+
+    <p class="msg" id="dash-msg"></p>
+
+    <!-- Add / edit form -->
+    <section class="card" id="form-card" hidden style="margin-bottom:18px">
+      <h2 id="form-title">New ad</h2>
+
+      <label for="f-title">Advertiser or ad title</label>
+      <input type="text" id="f-title" maxlength="80" placeholder="e.g. Mama Tee Phone Accessories">
+
+      <label for="f-link">Website, Telegram or WhatsApp link <span class="hint">– where people go when they tap the ad</span></label>
+      <input type="url" id="f-link" placeholder="e.g. https://t.me/yourbusiness">
+
+      <label for="f-image">Banner picture <span class="hint">– optional. Any wide banner works, e.g. 970 × 250. It shows in full, never cropped. Under 2 MB</span></label>
+      <input type="file" id="f-image" accept="image/*">
+      <div class="preview" id="preview" hidden>
+        <img id="preview-img" alt="Banner preview">
+        <button class="danger" id="remove-img" type="button">Remove picture</button>
+      </div>
+
+      <label for="f-desc">Short text <span class="hint">– shown only when there's no picture</span></label>
+      <textarea id="f-desc" maxlength="140" placeholder="e.g. Original chargers and earpieces. Fast delivery in Lagos."></textarea>
+
+      <label for="f-pos">Spot on the page</label>
+      <select id="f-pos">
+        <option value="1">1 – Top (most visible)</option>
+        <option value="2">2</option><option value="3">3</option>
+        <option value="4">4</option><option value="5">5</option><option value="6">6 – Last</option>
+      </select>
+
+      <label for="f-end">Show until <span class="hint">– leave empty to show forever</span></label>
+      <input type="date" id="f-end">
+
+      <label class="check"><input type="checkbox" id="f-active" checked> Show this ad on the website</label>
+
+      <div class="form-actions">
+        <button class="ghost" id="cancel" type="button">Cancel</button>
+        <button class="primary" id="save" type="button">Save ad</button>
+      </div>
+      <p class="msg err" id="form-msg"></p>
+    </section>
+
+    <div id="list"></div>
+  </section>
+
+  <p class="msg err" id="setup-msg"></p>
+</div>
+
+<script>
+const CFG = window.SITE_CONFIG || {};
+const MAX = 6;
+const $ = id => document.getElementById(id);
+
+if (!CFG.SUPABASE_URL || CFG.SUPABASE_URL.includes("YOUR-PROJECT") || !window.supabase) {
+  $("setup-msg").textContent = "Setup not finished: add your Supabase URL and key to config.js.";
+  throw new Error("Missing config");
+}
+const db = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+
+let ads = [], editing = null, removeImage = false;
+
+/* ---------- Login ---------- */
+function showView(session) {
+  $("login-view").hidden = !!session;
+  $("dash-view").hidden = !session;
+  if (session) { loadStats(); loadAds(); }
+}
+
+$("login-btn").onclick = async () => {
+  $("login-msg").textContent = "";
+  $("login-btn").disabled = true; $("login-btn").textContent = "Logging in…";
+  const { error } = await db.auth.signInWithPassword({ email: $("email").value.trim(), password: $("password").value });
+  $("login-btn").disabled = false; $("login-btn").textContent = "Log in";
+  if (error) { $("login-msg").textContent = "Wrong email or password."; return; }
+  $("password").value = "";
+};
+$("password").addEventListener("keydown", e => { if (e.key === "Enter") $("login-btn").click(); });
+$("logout").onclick = () => db.auth.signOut();
+
+/* ---------- Load & show ads ---------- */
+const today = () => new Date().toISOString().slice(0, 10);
+function status(ad) {
+  if (ad.ends_on && ad.ends_on < today()) return ["expired", "Expired"];
+  return ad.active ? ["live", "Live"] : ["paused", "Paused"];
+}
+function niceDate(d) { return new Date(d + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); }
+function flash(text, ok = true) {
+  const m = $("dash-msg"); m.textContent = text; m.className = "msg " + (ok ? "ok" : "err");
+  if (ok) setTimeout(() => { if (m.textContent === text) m.textContent = ""; }, 3000);
+}
+
+async function loadAds() {
+  const { data, error } = await db.from("ads").select("*").order("position").order("created_at");
+  if (error) { flash("Couldn't load ads: " + error.message, false); return; }
+  ads = data; render();
+}
+
+function render() {
+  $("count-text").textContent = `${ads.length} of ${MAX} ad spaces used`;
+  $("slots").innerHTML = Array.from({ length: MAX }, (_, i) => `<i class="${i < ads.length ? "on" : ""}"></i>`).join("");
+  $("add-btn").disabled = ads.length >= MAX;
+  $("add-btn").title = ads.length >= MAX ? "All 6 spaces are full. Delete an ad to add a new one." : "";
+
+  const list = $("list"); list.innerHTML = "";
+  if (!ads.length) {
+    list.innerHTML = '<div class="empty"><strong>No ads yet</strong><br>Tap "+ Add new ad" to put your first advertiser on the site.</div>';
+    return;
+  }
+  ads.forEach(ad => {
+    const [cls, label] = status(ad);
+    const item = document.createElement("div"); item.className = "ad-item";
+
+    let thumb;
+    if (ad.image_url) { thumb = document.createElement("img"); thumb.src = ad.image_url; thumb.alt = ""; }
+    else { thumb = document.createElement("div"); thumb.textContent = "Text ad"; }
+    thumb.className = "thumb";
+
+    const body = document.createElement("div");
+    const h = document.createElement("h3"); h.textContent = ad.title;
+    const meta1 = document.createElement("div"); meta1.className = "meta link"; meta1.textContent = ad.link;
+    const meta2 = document.createElement("div"); meta2.className = "meta";
+    meta2.innerHTML = `<span class="pill ${cls}">${label}</span>`;
+    meta2.append(`Spot ${ad.position} · ${ad.clicks} clicks` + (ad.ends_on ? ` · until ${niceDate(ad.ends_on)}` : ""));
+
+    const actions = document.createElement("div"); actions.className = "actions";
+    const b = (text, cls, fn) => { const x = document.createElement("button"); x.textContent = text; x.className = cls; x.onclick = fn; actions.append(x); };
+    b("Edit", "ghost", () => openForm(ad));
+    b(ad.active ? "Pause" : "Turn on", "ghost", () => toggle(ad));
+    b("Delete", "danger", () => remove(ad));
+
+    body.append(h, meta1, meta2, actions);
+    item.append(thumb, body);
+    list.append(item);
+  });
+}
+
+/* ---------- Visitor stats ---------- */
+const lagosDay = (d = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos" }).format(d);
+const daysAgo = n => lagosDay(new Date(Date.now() - n * 86400000));
+const fmt = n => n.toLocaleString();
+
+async function loadStats() {
+  const { data, error } = await db.from("site_stats").select("day,views,visitors").order("day");
+  if (error) { $("stats-refresh").textContent = "Couldn't load"; return; }
+  const byDay = Object.fromEntries(data.map(r => [r.day, r]));
+  const sum = (fromDay, key) => data.filter(r => r.day >= fromDay).reduce((t, r) => t + r[key], 0);
+  const set = (id, v, views) => { $(id).textContent = fmt(v); $(id + "-v").textContent = fmt(views) + " views"; };
+  const t = byDay[lagosDay()] || { views: 0, visitors: 0 };
+  set("s-today", t.visitors, t.views);
+  set("s-7", sum(daysAgo(6), "visitors"), sum(daysAgo(6), "views"));
+  set("s-30", sum(daysAgo(29), "visitors"), sum(daysAgo(29), "views"));
+  set("s-all", sum("0000-01-01", "visitors"), sum("0000-01-01", "views"));
+
+  const days = Array.from({ length: 14 }, (_, i) => daysAgo(13 - i));
+  const max = Math.max(1, ...days.map(d => byDay[d]?.visitors || 0));
+  $("chart").innerHTML = "";
+  days.forEach((d, i) => {
+    const v = byDay[d]?.visitors || 0;
+    const col = document.createElement("div"); if (i === 13) col.className = "today";
+    col.title = `${d}: ${v} visitors`;
+    const bar = document.createElement("i"); bar.style.height = (v / max * 100) + "%";
+    const label = document.createElement("em"); label.textContent = i === 13 ? "Today" : String(Number(d.slice(8)));
+    col.append(bar, label); $("chart").append(col);
+  });
+  $("stats-refresh").textContent = "Refresh";
+}
+$("stats-refresh").onclick = () => { $("stats-refresh").textContent = "Loading…"; loadStats(); };
+
+/* ---------- Add / edit form ---------- */
+function openForm(ad = null) {
+  editing = ad; removeImage = false;
+  $("form-title").textContent = ad ? "Edit ad" : "New ad";
+  $("f-title").value = ad?.title || "";
+  $("f-link").value = ad?.link || "";
+  $("f-desc").value = ad?.description || "";
+  $("f-pos").value = ad?.position || Math.min(ads.length + 1, MAX);
+  $("f-end").value = ad?.ends_on || "";
+  $("f-active").checked = ad ? ad.active : true;
+  $("f-image").value = "";
+  setPreview(ad?.image_url || "");
+  $("form-msg").textContent = "";
+  $("form-card").hidden = false;
+  $("form-card").scrollIntoView({ behavior: "smooth", block: "start" });
+  $("f-title").focus({ preventScroll: true });
+}
+function closeForm() { $("form-card").hidden = true; editing = null; }
+function setPreview(src) { $("preview").hidden = !src; if (src) $("preview-img").src = src; }
+
+$("add-btn").onclick = () => openForm();
+$("cancel").onclick = closeForm;
+$("f-image").onchange = () => {
+  const f = $("f-image").files[0];
+  if (f) { removeImage = false; setPreview(URL.createObjectURL(f)); }
+};
+$("remove-img").onclick = () => { $("f-image").value = ""; removeImage = true; setPreview(""); };
+
+function fixLink(raw) {
+  let s = raw.trim();
+  if (!s) return "";
+  if (!/^https?:\/\//i.test(s)) s = "https://" + s;
+  try { const u = new URL(s); return u.hostname.includes(".") ? u.href : ""; } catch { return ""; }
+}
+
+function imagePath(url) { return url && url.includes("/ad-images/") ? decodeURIComponent(url.split("/ad-images/")[1]) : null; }
+
+$("save").onclick = async () => {
+  const err = t => { $("form-msg").textContent = t; };
+  err("");
+  const title = $("f-title").value.trim();
+  const link = fixLink($("f-link").value);
+  const file = $("f-image").files[0];
+  if (!title) return err("Add a title for this ad.");
+  if (!link) return err("Add a working link, like https://t.me/yourbusiness or https://example.com");
+  if (file && !file.type.startsWith("image/")) return err("The banner must be a picture file (JPG, PNG or WebP).");
+  if (file && file.size > 2 * 1024 * 1024) return err("That picture is too big. Please use one under 2 MB.");
+
+  $("save").disabled = true; $("save").textContent = "Saving…";
+  try {
+    let image_url = removeImage ? null : (editing?.image_url || null);
+    const oldImage = editing?.image_url;
+
+    if (file) {
+      const path = `${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi, "_")}`;
+      const up = await db.storage.from("ad-images").upload(path, file, { cacheControl: "3600", upsert: false });
+      if (up.error) throw up.error;
+      image_url = db.storage.from("ad-images").getPublicUrl(path).data.publicUrl;
+    }
+
+    const row = {
+      title, link, image_url,
+      description: $("f-desc").value.trim() || null,
+      position: Number($("f-pos").value),
+      ends_on: $("f-end").value || null,
+      active: $("f-active").checked
+    };
+
+    const res = editing
+      ? await db.from("ads").update(row).eq("id", editing.id)
+      : await db.from("ads").insert(row);
+    if (res.error) throw res.error;
+
+    if (oldImage && oldImage !== image_url) {                 // tidy up the replaced picture
+      const p = imagePath(oldImage); if (p) db.storage.from("ad-images").remove([p]);
+    }
+    const wasEditing = !!editing;
+    closeForm(); await loadAds();
+    flash(wasEditing ? "Ad updated." : "Ad added. It's now on your website.");
+  } catch (e) {
+    err(e.message || "Something went wrong. Please try again.");
+  } finally {
+    $("save").disabled = false; $("save").textContent = "Save ad";
+  }
+};
+
+/* ---------- Pause / delete ---------- */
+async function toggle(ad) {
+  const { error } = await db.from("ads").update({ active: !ad.active }).eq("id", ad.id);
+  if (error) return flash(error.message, false);
+  await loadAds(); flash(ad.active ? "Ad paused. It's hidden from the website." : "Ad is live again.");
+}
+async function remove(ad) {
+  if (!confirm(`Delete "${ad.title}"? This can't be undone.`)) return;
+  const { error } = await db.from("ads").delete().eq("id", ad.id);
+  if (error) return flash(error.message, false);
+  const p = imagePath(ad.image_url); if (p) db.storage.from("ad-images").remove([p]);
+  if (editing?.id === ad.id) closeForm();
+  await loadAds(); flash("Ad deleted.");
+}
+
+// Runs on page load, login and logout
+db.auth.onAuthStateChange((event, session) => {
+  if (event === "TOKEN_REFRESHED") return;
+  setTimeout(() => showView(session), 0);
+});
+</script>
+</body>
+</html>
