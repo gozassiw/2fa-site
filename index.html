@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>2fahome – Free 2FA Code Generator</title>
+<script>
+  // Pick light/dark before the page draws (saved choice, otherwise the phone's setting)
+  (function () { var t = null; try { t = localStorage.getItem("theme"); } catch (e) {}
+    var dark = t ? t === "dark" : window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light"); })();
+</script>
+<title>2FAHOME – Free 2FA Code Generator</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%229%22%20fill%3D%22%232B4ACB%22/%3E%3Cpath%20d%3D%22M16%205.5%2024.5%208.7v6.4c0%205.4-3.6%209.5-8.5%2011.4-4.9-1.9-8.5-6-8.5-11.4V8.7z%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2214%22%20r%3D%222.6%22%20fill%3D%22%232B4ACB%22/%3E%3Cpath%20d%3D%22M14.7%2015.4h2.6l.9%205.1h-4.4z%22%20fill%3D%22%232B4ACB%22/%3E%3C/svg%3E">
 <meta name="description" content="Paste your 2FA secret key and get your 6-digit login code instantly. Your key never leaves your browser.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,9 +18,28 @@
 <script src="config.js"></script>
 <style>
   :root{
-    --fog:#E9EDF3; --card:#FFFFFF; --ink:#17213A; --soft:#5B6882;
-    --mist:#CDD6E6; --cobalt:#2B4ACB; --cobalt-dark:#1F37A0; --alert:#B42343; --ok:#1E7F52; --tg:#229ED9;
+    --fog:#E9EDF3; --card:#FFFFFF; --ink:#17213A; --soft:#5B6882; --mist:#CDD6E6;
+    --cobalt:#2B4ACB; --cobalt-dark:#1F37A0; --alert:#B42343; --ok:#1E7F52; --warn:#8A5A00; --tg:#229ED9;
+    --field:#F7F9FC; --field-focus:#FFFFFF; --ghost:#EEF2F8; --result:#F2F5FB;
+    --promo:#DDE8FA; --promo-line:#C3D4F2; --btn-dark:#17213A; --btn-dark-fg:#FFFFFF;
+    --danger-bg:#FBEAEE; --ok-bg:#E3F4EC; --warn-bg:#FDF1DC; --shadow:var(--shadow);
+    color-scheme:light;
   }
+  [data-theme="dark"]{
+    --fog:#0E1320; --card:#171E2E; --ink:#E7ECF6; --soft:#9AA6BE; --mist:#2B3650;
+    --cobalt:#4F6EF0; --cobalt-dark:#3F5CDA; --alert:#F2758C; --ok:#23915F; --warn:#E3B04B; --tg:#1F8FC6;
+    --field:#111827; --field-focus:#0F1626; --ghost:#232D44; --result:#1A2440;
+    --promo:#18233D; --promo-line:#2A3C66; --btn-dark:#E7ECF6; --btn-dark-fg:#0E1320;
+    --danger-bg:#3A1C26; --ok-bg:#15352A; --warn-bg:#3A2E14; --shadow:rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+  body{transition:background-color .2s,color .2s}
+  .theme-btn{width:38px;height:38px;border-radius:50%;background:var(--card);border:1px solid var(--mist);color:var(--ink);display:inline-grid;place-items:center;padding:0;flex-shrink:0;cursor:pointer}
+  .theme-btn:hover{border-color:var(--cobalt)}
+  .theme-btn svg{width:18px;height:18px}
+  .theme-btn .i-sun{display:none}
+  [data-theme="dark"] .theme-btn .i-sun{display:block}
+  [data-theme="dark"] .theme-btn .i-moon{display:none}
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:Manrope,system-ui,sans-serif;background:var(--fog);color:var(--ink);line-height:1.5}
   a{color:var(--cobalt)}
@@ -22,10 +48,12 @@
   button:focus-visible,textarea:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
 
   /* Header + advertise bar */
-  header{padding:12px 0 10px}
-  .logo{font-weight:800;font-size:1.1rem;text-decoration:none;color:var(--ink);letter-spacing:-.02em;display:inline-flex;align-items:center;gap:7px}
-  .logo::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--cobalt)}
-  .promo{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#DDE8FA;border:1px solid #C3D4F2;border-radius:12px;padding:8px 8px 8px 12px;margin-bottom:10px}
+  header{padding:12px 0 10px;display:flex;justify-content:space-between;align-items:center}
+  .logo{display:inline-flex;align-items:center;gap:9px;text-decoration:none;color:var(--ink)}
+  .logo .mark{display:block;flex-shrink:0}
+  .wordmark{font-weight:800;font-size:1.25rem;letter-spacing:.03em;line-height:1}
+  .wordmark b{color:var(--cobalt);font-weight:800}
+  .promo{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--promo);border:1px solid var(--promo-line);border-radius:12px;padding:8px 8px 8px 12px;margin-bottom:10px}
   .promo p{font-size:.85rem;line-height:1.3}
   .promo strong{display:block}
   .promo span{color:var(--soft);font-size:.78rem}
@@ -35,27 +63,27 @@
   /* Tool */
   .tool{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--mist)}
   h1{font-size:1.2rem;font-weight:800;letter-spacing:-.01em;margin-bottom:10px}
-  textarea{width:100%;height:58px;resize:vertical;font:inherit;font-size:1rem;padding:10px 12px;border:1.5px solid var(--mist);border-radius:12px;background:#F7F9FC;color:var(--ink);word-break:break-all}
-  textarea:focus{outline:none;border-color:var(--cobalt);background:#fff}
+  textarea{width:100%;height:58px;resize:vertical;font:inherit;font-size:1rem;padding:10px 12px;border:1.5px solid var(--mist);border-radius:12px;background:var(--field);color:var(--ink);word-break:break-all}
+  textarea:focus{outline:none;border-color:var(--cobalt);background:var(--field-focus)}
   .row{display:grid;grid-template-columns:auto 1fr;gap:8px;margin-top:8px}
   .row button{padding:12px 16px;font-size:.95rem}
   .primary{background:var(--cobalt);color:#fff}
   .primary:hover{background:var(--cobalt-dark)}
-  .ghost{background:#EEF2F8;color:var(--ink)}
+  .ghost{background:var(--ghost);color:var(--ink)}
   .ghost:hover{background:var(--mist)}
   .error{color:var(--alert);font-weight:600;font-size:.88rem;margin-top:8px}
   .note{color:var(--soft);font-size:.82rem;margin-top:8px}
   .error:empty,.note:empty{display:none}
 
   /* Code pop-up */
-  .result{margin-top:10px;background:#F2F5FB;border:1.5px solid var(--cobalt);border-radius:14px;padding:12px 12px 10px 16px}
+  .result{margin-top:10px;background:var(--result);border:1.5px solid var(--cobalt);border-radius:14px;padding:12px 12px 10px 16px}
   .result[hidden]{display:none}
   .result.pop{animation:pop .28s cubic-bezier(.2,.9,.3,1.2)}
   @keyframes pop{from{opacity:0;transform:translateY(-6px) scale(.96)}to{opacity:1;transform:none}}
   .code-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-  .code{white-space:nowrap;font-size:clamp(2rem,10vw,2.8rem);font-weight:800;letter-spacing:.06em;font-variant-numeric:tabular-nums;line-height:1.1;cursor:pointer}
+  .code{white-space:nowrap;min-width:0;font-size:clamp(1.75rem,8.6vw,2.8rem);font-weight:800;letter-spacing:.06em;font-variant-numeric:tabular-nums;line-height:1.1;cursor:pointer}
   .code .gap{display:inline-block;width:.25em}
-  .copy{background:var(--ink);color:#fff;padding:12px 16px;font-size:.92rem;flex-shrink:0}
+  .copy{background:var(--btn-dark);color:var(--btn-dark-fg);padding:12px 14px;font-size:.9rem;flex-shrink:0;white-space:nowrap}
   .copy.done{background:var(--ok)}
   .time-row{display:flex;align-items:center;gap:10px;margin-top:8px}
   .bar{flex:1;height:5px;border-radius:5px;background:var(--mist);overflow:hidden}
@@ -72,7 +100,7 @@
   .ads{margin-top:16px}
   .sponsored{font-size:.82rem;color:var(--soft);margin-bottom:8px;font-weight:600}
   .ad-grid{display:grid;grid-template-columns:1fr;gap:14px}
-  .ad{position:relative;display:block;background:var(--card);border:1px solid var(--mist);border-radius:18px;overflow:hidden;text-decoration:none;color:var(--ink);box-shadow:0 2px 8px rgba(23,33,58,.06)}
+  .ad{position:relative;display:block;background:var(--card);border:1px solid var(--mist);border-radius:18px;overflow:hidden;text-decoration:none;color:var(--ink);box-shadow:0 2px 8px var(--shadow)}
   .ad:hover{border-color:var(--cobalt)}
   .ad img{width:100%;height:auto;display:block}   /* banners show in full, never cropped */
   .ad.banner{background:transparent}
@@ -81,7 +109,7 @@
   .ad strong{display:block;font-size:1.4rem;font-weight:800;line-height:1.2;letter-spacing:-.01em;padding-right:34px}
   .ad p{font-size:1.02rem;color:var(--soft);margin-top:8px;line-height:1.45}
   .ad .go{align-self:flex-start;font-size:1rem;font-weight:700;color:#fff;background:var(--cobalt);padding:12px 22px;border-radius:12px;margin-top:16px}
-  .ad .tag{position:absolute;top:10px;right:10px;background:rgba(23,33,58,.72);color:#fff;font-size:.72rem;font-weight:700;padding:3px 8px;border-radius:6px}
+  .ad .tag{position:absolute;top:10px;right:10px;background:var(--soft);color:var(--card);font-size:.72rem;font-weight:700;padding:3px 8px;border-radius:6px}
   .ad.empty{border-style:dashed;border-width:2px;background:transparent;text-align:center;box-shadow:none}
   .ad.empty .txt{align-items:center;min-height:120px}
   .ad.empty strong{padding-right:0;font-size:1.15rem}
@@ -101,7 +129,8 @@
 <div class="page">
 
   <header>
-    <a class="logo" href="#" id="logo">2fahome</a>
+    <a class="logo" href="/" aria-label="2FAHOME home"><svg class="mark" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#2B4ACB"/><path d="M16 5.5 24.5 8.7v6.4c0 5.4-3.6 9.5-8.5 11.4-4.9-1.9-8.5-6-8.5-11.4V8.7z" fill="#fff"/><circle cx="16" cy="14" r="2.6" fill="#2B4ACB"/><path d="M14.7 15.4h2.6l.9 5.1h-4.4z" fill="#2B4ACB"/></svg><span class="wordmark"><b>2FA</b>HOME</span></a>
+    <button class="theme-btn" type="button" aria-label="Switch light or dark mode" title="Light / dark mode"><svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2 12h2.2M19.8 12H22M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg></button>
   </header>
 
   <main>
@@ -155,7 +184,7 @@
     </details>
   </main>
 
-  <footer>© <span id="year"></span> <span id="foot-name">2fahome</span></footer>
+  <footer>© <span id="year"></span> <span id="foot-name">2FAHOME</span></footer>
 </div>
 
 <script>
@@ -163,9 +192,17 @@ const CFG = window.SITE_CONFIG || {};
 const $ = id => document.getElementById(id);
 
 /* ---------- Site name & Telegram ---------- */
-if (CFG.SITE_NAME) { $("logo").textContent = CFG.SITE_NAME; $("foot-name").textContent = CFG.SITE_NAME; document.title = CFG.SITE_NAME + " – Free 2FA Code Generator"; }
+// The logo is fixed in the page header; the footer and tab title use SITE_NAME from config.js
+if (CFG.SITE_NAME) { $("foot-name").textContent = CFG.SITE_NAME; document.title = CFG.SITE_NAME + " – Free 2FA Code Generator"; }
 $("tg").href = "https://t.me/" + String(CFG.TELEGRAM || "").trim().replace(/^@/, "").replace(/^https?:\/\/t\.me\//, "");
 $("year").textContent = new Date().getFullYear();
+
+/* ---------- Light / dark mode switch ---------- */
+document.querySelectorAll(".theme-btn").forEach(btn => btn.addEventListener("click", () => {
+  const dark = document.documentElement.getAttribute("data-theme") !== "dark";
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) {}
+}));
 
 /* ---------- TOTP (RFC 6238) — runs only in the browser ---------- */
 function base32ToBytes(input) {
